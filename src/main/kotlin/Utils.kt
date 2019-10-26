@@ -4,6 +4,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.awt.Color
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 
 infix fun ClosedRange<Double>.step(step: Double): Iterable<Double> {
@@ -20,9 +22,10 @@ infix fun ClosedRange<Double>.step(step: Double): Iterable<Double> {
 
 fun launch(
     tryBlock: suspend CoroutineScope.() -> Unit,
-    catchBlock: (suspend CoroutineScope.(Throwable) -> Unit)?
+    catchBlock: (suspend CoroutineScope.(Throwable) -> Unit)?,
+    context: CoroutineContext = EmptyCoroutineContext
 ) {
-    GlobalScope.launch(Dispatchers.Main) {
+    GlobalScope.launch(Dispatchers.Main + context) {
         try {
             tryBlock(this)
         } catch (e: Throwable) {
@@ -31,8 +34,8 @@ fun launch(
     }
 }
 
-fun launch(tryBlock: suspend CoroutineScope.() -> Unit) {
-    launch(tryBlock, null)
+fun launch(tryBlock: suspend CoroutineScope.() -> Unit, context: CoroutineContext = EmptyCoroutineContext) {
+    launch(tryBlock, null, context)
 }
 
 fun XYChart.Series<*, *>.setColor(color: Color) {
@@ -40,5 +43,5 @@ fun XYChart.Series<*, *>.setColor(color: Color) {
 
     val rgb = "${color.red}, ${color.green}, ${color.blue}"
 
-    line.style = "-fx-stroke: rgba($rgb, 1.0);";
+    line.style = "-fx-stroke: rgba($rgb, 1.0);"
 }

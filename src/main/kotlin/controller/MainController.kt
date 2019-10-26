@@ -1,12 +1,15 @@
 package controller
 
 import calculation.Evaluator
+import kotlinx.coroutines.Job
 import view.MainView
 import launch
 import tornadofx.Controller
 
 class MainController : Controller() {
     public val dataModel = model.MainModel()
+
+    private var calculationJob = Job()
 
     val evaluator = Evaluator()
 
@@ -59,6 +62,8 @@ class MainController : Controller() {
     }
 
     private fun recalculate() {
+        cancelPreviousCalculations()
+
         launch ({
             dataModel.loading.set(true)
 
@@ -68,6 +73,15 @@ class MainController : Controller() {
             dataModel.solution.set(result)
         }, {
             dataModel.loading.set(false)
-        })
+        }, calculationJob)
     }
+
+    private fun cancelPreviousCalculations() {
+        if (!calculationJob.isCompleted)
+            calculationJob.cancel()
+
+        calculationJob = Job()
+    }
+
+
 }

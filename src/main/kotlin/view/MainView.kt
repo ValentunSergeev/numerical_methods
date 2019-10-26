@@ -104,27 +104,29 @@ class MainView : View("De Assigment") {
         }
 
         center {
-            text("Computing...").visibleProperty().bind(controller.dataModel.loading)
+            vbox {
+                linechart("Solutions", configureXAxis(), configureYAxis()) {
+                    createSymbols = false
 
-            linechart("Solutions", configureXAxis(), configureYAxis()) {
-                createSymbols = false
+                    dataProperty().bind(controller.dataModel.graphData)
+                    visibleWhen(Bindings.not(controller.dataModel.loading))
 
-                dataProperty().bind(controller.dataModel.graphData)
-                visibleWhen(Bindings.not(controller.dataModel.loading))
+                    dataProperty().onChange { newValue ->
+                        newValue?.forEach { series ->
+                            val binder = when (series.name) {
+                                SOLUTION_ANALYTICAL -> graphParams.isAnalyticalVisible
+                                SOLUTION_EULER, ERROR_EULER -> graphParams.isEVisible
+                                SOLUTION_IMPROVED_EULER, ERROR_IMPROVED_EULER -> graphParams.isIEVisible
+                                SOLUTION_KUTTA, ERROR_KUTTA -> graphParams.isRKVisible
+                                else -> null
+                            }
 
-                dataProperty().onChange { newValue ->
-                    newValue?.forEach { series ->
-                        val binder = when (series.name) {
-                            SOLUTION_ANALYTICAL -> graphParams.isAnalyticalVisible
-                            SOLUTION_EULER, ERROR_EULER -> graphParams.isEVisible
-                            SOLUTION_IMPROVED_EULER, ERROR_IMPROVED_EULER -> graphParams.isIEVisible
-                            SOLUTION_KUTTA, ERROR_KUTTA -> graphParams.isRKVisible
-                            else -> null
+                            series.node.visibleProperty().bind(binder)
                         }
-
-                        series.node.visibleProperty().bind(binder)
                     }
                 }
+
+                text("Computing...").visibleProperty().bind(controller.dataModel.loading)
             }
         }
     }
