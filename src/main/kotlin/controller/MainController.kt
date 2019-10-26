@@ -49,18 +49,6 @@ class MainController : Controller() {
         }
     }
 
-    fun eVisibilityChanged(newValue: Boolean) {
-        dataModel.graphParams.isEVisible.set(newValue)
-    }
-
-    fun ieVisibilityChanged(newValue: Boolean) {
-        dataModel.graphParams.isIEVisible.set(newValue)
-    }
-
-    fun rkVisibilityChanged(newValue: Boolean) {
-        dataModel.graphParams.isRKVisible.set(newValue)
-    }
-
     private fun recalculate() {
         cancelPreviousCalculations()
 
