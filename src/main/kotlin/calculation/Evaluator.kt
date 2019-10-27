@@ -2,7 +2,7 @@ package calculation
 
 import calculation.data.SolutionResult
 import calculation.solutons.AnalyticalSolution
-import calculation.solutons.Error
+import calculation.solutons.LocalError
 import calculation.solutons.base.ERROR_EULER
 import calculation.solutons.base.ERROR_IMPROVED_EULER
 import calculation.solutons.base.ERROR_KUTTA
@@ -19,9 +19,9 @@ class Evaluator {
         )
 
         val errors = listOf(
-            Error(ERROR_EULER, AnalyticalSolution(), EulerSolution()),
-            Error(ERROR_IMPROVED_EULER, AnalyticalSolution(), ImprovedEulerSolution()),
-            Error(ERROR_KUTTA, AnalyticalSolution(), RungeKuttaSolution())
+            LocalError(ERROR_EULER, AnalyticalSolution(), EulerSolution()),
+            LocalError(ERROR_IMPROVED_EULER, AnalyticalSolution(), ImprovedEulerSolution()),
+            LocalError(ERROR_KUTTA, AnalyticalSolution(), RungeKuttaSolution())
         )
 
         val result = (solutions + errors).map {
