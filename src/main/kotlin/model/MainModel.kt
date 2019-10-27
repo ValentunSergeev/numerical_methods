@@ -18,11 +18,23 @@ class MainModel {
 
     val solution = SimpleObjectProperty(SolutionResult())
 
-    val graphData = Bindings.createObjectBinding(
+    val solutionData = Bindings.createObjectBinding(
         Callable {
             val result = FXCollections.observableArrayList<XYChart.Series<Number, Number>>()
 
-            result.addAll(solution.value.data)
+            result.addAll(solution.value.solutions)
+
+            result
+        },
+
+        solution
+    )
+
+    val errorsData =  Bindings.createObjectBinding(
+        Callable {
+            val result = FXCollections.observableArrayList<XYChart.Series<Number, Number>>()
+
+            result.addAll(solution.value.errors)
 
             result
         },

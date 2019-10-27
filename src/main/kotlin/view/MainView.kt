@@ -1,5 +1,6 @@
 package view
 
+import calculation.data.Borders
 import calculation.solutons.base.*
 import controller.MainController
 import javafx.beans.binding.Bindings
@@ -8,6 +9,8 @@ import javafx.scene.chart.NumberAxis
 import javafx.scene.control.TextField
 import tornadofx.*
 import java.util.concurrent.Callable
+
+private const val GRID_STEPS_COUNT = 10
 
 class MainView : View("De Assigment") {
     private val controller by inject<MainController>()
@@ -20,6 +23,7 @@ class MainView : View("De Assigment") {
     private val stepCountDescription = solutionParams().stepsNumber.stringBinding { "Step count is %d".format(it) }
 
     private val graphParams = controller.dataModel.graphParams
+    private val solution = controller.dataModel.solution
 
     override val root = borderpane {
         right {
@@ -105,19 +109,19 @@ class MainView : View("De Assigment") {
 
         center {
             vbox {
-                linechart("Solutions", configureXAxis(), configureYAxis()) {
+                linechart("Solutions", configureXAxis(), configureYAxis { solution.value.solutionBorders }) {
                     createSymbols = false
 
-                    dataProperty().bind(controller.dataModel.graphData)
+                    dataProperty().bind(controller.dataModel.solutionData)
                     visibleWhen(Bindings.not(controller.dataModel.loading))
 
                     dataProperty().onChange { newValue ->
                         newValue?.forEach { series ->
                             val binder = when (series.name) {
                                 SOLUTION_ANALYTICAL -> graphParams.isAnalyticalVisible
-                                SOLUTION_EULER, ERROR_EULER -> graphParams.isEVisible
-                                SOLUTION_IMPROVED_EULER, ERROR_IMPROVED_EULER -> graphParams.isIEVisible
-                                SOLUTION_KUTTA, ERROR_KUTTA -> graphParams.isRKVisible
+                                SOLUTION_EULER -> graphParams.isEVisible
+                                SOLUTION_IMPROVED_EULER -> graphParams.isIEVisible
+                                SOLUTION_KUTTA -> graphParams.isRKVisible
                                 else -> null
                             }
 
@@ -129,12 +133,36 @@ class MainView : View("De Assigment") {
                 text("Computing...").visibleProperty().bind(controller.dataModel.loading)
             }
         }
+
+        left {
+            linechart("Errors", configureXAxis(), configureYAxis { solution.value.errorBorders }) {
+                createSymbols = false
+
+                dataProperty().bind(controller.dataModel.errorsData)
+                visibleWhen(Bindings.not(controller.dataModel.loading))
+
+                dataProperty().onChange { newValue ->
+                    newValue?.forEach { series ->
+                        val binder = when (series.name) {
+                            ERROR_EULER -> graphParams.isEVisible
+                            ERROR_IMPROVED_EULER -> graphParams.isIEVisible
+                            ERROR_KUTTA -> graphParams.isRKVisible
+                            else -> null
+                        }
+
+                        series.node.visibleProperty().bind(binder)
+                    }
+                }
+
+
+            }
+        }
     }
 
     private fun configureXAxis(): Axis<Number> {
         val solutionParams = solutionParams()
 
-        val tickProperty = (solutionParams.xFinal - solutionParams.xInitial) / 10
+        val tickProperty = (solutionParams.xFinal - solutionParams.xInitial) / GRID_STEPS_COUNT
 
         val result =
             NumberAxis(
@@ -150,17 +178,20 @@ class MainView : View("De Assigment") {
         return result
     }
 
-    private fun configureYAxis(): Axis<Number> {
+    private fun configureYAxis(borderGetter: () -> Borders): Axis<Number> {
         val model = controller.dataModel
+        val initialOBorders = borderGetter.invoke()
 
-        val solutionValue = model.solution.value
+        val result = NumberAxis(
+            initialOBorders.min,
+            initialOBorders.max,
+            (initialOBorders.min - initialOBorders.max) / GRID_STEPS_COUNT
+        )
 
-        val result = NumberAxis(solutionValue.minY, solutionValue.maxY, (solutionValue.maxY - solutionValue.minY) / 10)
+        val minYBinding = Bindings.createDoubleBinding(Callable { borderGetter.invoke().min }, model.solution)
+        val maxYBinding = Bindings.createDoubleBinding(Callable { borderGetter.invoke().max }, model.solution)
 
-        val minYBinding = Bindings.createDoubleBinding(Callable { model.solution.value.minY }, model.solution)
-        val maxYBinding = Bindings.createDoubleBinding(Callable { model.solution.value.maxY }, model.solution)
-
-        val stepBinding = (maxYBinding - minYBinding) / 10
+        val stepBinding = (maxYBinding - minYBinding) / GRID_STEPS_COUNT
 
         result.lowerBoundProperty().bind(minYBinding - stepBinding)
         result.upperBoundProperty().bind(maxYBinding + stepBinding)

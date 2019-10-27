@@ -16,18 +16,14 @@ class Evaluator {
         val solutions = listOf(
             AnalyticalSolution(),
             EulerSolution(), ImprovedEulerSolution(), RungeKuttaSolution()
-        )
+        ).map { it.solveAsync(params).await() }
 
         val errors = listOf(
             LocalError(ERROR_EULER, AnalyticalSolution(), EulerSolution()),
             LocalError(ERROR_IMPROVED_EULER, AnalyticalSolution(), ImprovedEulerSolution()),
             LocalError(ERROR_KUTTA, AnalyticalSolution(), RungeKuttaSolution())
-        )
+        ).map { it.solveAsync(params).await() }
 
-        val result = (solutions + errors).map {
-            it.solveAsync(params).await()
-        }
-
-        return SolutionResult(result)
+        return SolutionResult(solutions, errors)
     }
 }
