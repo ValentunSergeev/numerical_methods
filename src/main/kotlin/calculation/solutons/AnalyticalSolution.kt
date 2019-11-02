@@ -22,8 +22,6 @@ class AnalyticalSolution : BaseSolution() {
     }
 
     private fun findConstant(xInitial: Double, yInitial: Double): Double {
-        require(xInitial != 0.0)
-
         return 1 / (Math.E.pow(yInitial) * xInitial.pow(2)) - 1 / xInitial
     }
 }

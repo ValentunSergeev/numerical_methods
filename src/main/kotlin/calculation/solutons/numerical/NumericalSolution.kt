@@ -14,8 +14,6 @@ abstract class NumericalSolution : BaseSolution() {
     }
 
     protected fun computeImplicit(x: Double, y: Double): Double {
-        require(x != 0.0)
-
         return Math.E.pow(y) - 2 / x
     }
 }

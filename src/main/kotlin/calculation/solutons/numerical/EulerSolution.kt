@@ -1,9 +1,6 @@
 package calculation.solutons.numerical
 
-import calculation.solutons.base.BaseSolution
 import calculation.solutons.base.SOLUTION_EULER
-import model.MainModel
-import kotlin.math.pow
 
 open class EulerSolution : NumericalSolution() {
     override val name = SOLUTION_EULER
