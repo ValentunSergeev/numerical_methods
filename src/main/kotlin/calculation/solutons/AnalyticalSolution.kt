@@ -2,7 +2,6 @@ package calculation.solutons
 
 import calculation.solutons.base.BaseSolution
 import calculation.solutons.base.SOLUTION_ANALYTICAL
-import model.MainModel
 import kotlin.math.E
 import kotlin.math.log
 import kotlin.math.pow
@@ -13,8 +12,8 @@ class AnalyticalSolution : BaseSolution() {
 
     private var constant: Double = 0.0
 
-    override fun init(params: MainModel.SolutionParams) {
-        constant = findConstant(params.xInitial.value, params.yInitial.value)
+    override fun init(config: SolveConfig) {
+        constant = findConstant(config.xInitial, config.yInitial)
     }
 
     override fun compute(x: Double): Double {

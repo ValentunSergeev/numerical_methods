@@ -2,7 +2,6 @@ package calculation.solutons
 
 import calculation.solutons.base.BaseSolution
 import model.MainModel
-import kotlin.math.abs
 
 class LocalError(
     override val name: String,
@@ -11,9 +10,9 @@ class LocalError(
 ) : BaseSolution() {
     private var previousGlobalError = 0.0
 
-    override fun init(params: MainModel.SolutionParams) {
-        ideal.init(params)
-        estimation.init(params)
+    override fun init(config: SolveConfig) {
+        ideal.init(config)
+        estimation.init(config)
     }
 
     override fun compute(x: Double): Double {

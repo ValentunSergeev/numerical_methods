@@ -30,11 +30,23 @@ class MainModel {
         solution
     )
 
-    val errorsData =  Bindings.createObjectBinding(
+    val localErrorsData =  Bindings.createObjectBinding(
         Callable {
             val result = FXCollections.observableArrayList<XYChart.Series<Number, Number>>()
 
-            result.addAll(solution.value.errors)
+            result.addAll(solution.value.localErrors)
+
+            result
+        },
+
+        solution
+    )
+
+    val globalErrorsData = Bindings.createObjectBinding(
+        Callable {
+            val result = FXCollections.observableArrayList<XYChart.Series<Number, Number>>()
+
+            result.addAll(solution.value.globalErrors)
 
             result
         },
@@ -51,9 +63,10 @@ class MainModel {
 
         val xFinal = SimpleDoubleProperty(7.0)
 
-        val stepsNumber = SimpleIntegerProperty(10)
+        val minStepsNumber = SimpleIntegerProperty(10)
+        val maxStepsNumber = SimpleIntegerProperty(100)
 
-        val stepSize = (xFinal - xInitial) / stepsNumber
+        val stepSize = (xFinal - xInitial) / maxStepsNumber
     }
 
     class GraphParams {

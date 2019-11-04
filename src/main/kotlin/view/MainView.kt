@@ -4,70 +4,37 @@ import calculation.data.Borders
 import calculation.solutons.base.*
 import controller.MainController
 import javafx.beans.binding.Bindings
+import javafx.beans.property.Property
 import javafx.scene.chart.Axis
 import javafx.scene.chart.NumberAxis
 import javafx.scene.control.TextField
 import tornadofx.*
+import java.lang.Double.max
+import java.lang.Double.min
 import java.util.concurrent.Callable
 
 private const val GRID_STEPS_COUNT = 10
 
+private const val UPPER_BORDER : Double = 100_000.toDouble()
+
 class MainView : View("De Assigment") {
     private val controller by inject<MainController>()
-
-    private val xInitialDescription = solutionParams().xInitial.stringBinding { "Initial x is %.3f".format(it) }
-    private val yInitialDescription = solutionParams().yInitial.stringBinding { "Initial y is %.3f".format(it) }
-
-    private val xFinalDescription = solutionParams().xFinal.stringBinding { "Final x is %.2f".format(it) }
-    private val stepSizeDescription = solutionParams().stepSize.stringBinding { "Step size is %.5f".format(it) }
-    private val stepCountDescription = solutionParams().stepsNumber.stringBinding { "Step count is %d".format(it) }
-
     private val graphParams = controller.dataModel.graphParams
+    private val solutionParams = controller.dataModel.solutionParams
     private val solution = controller.dataModel.solution
 
     override val root = borderpane {
         right {
-            text {
-                bind(xInitialDescription)
-
-                paddingAll = 20
-            }
-
-            text {
-                bind(yInitialDescription)
-
-                paddingAll = 20
-            }
-
-            text {
-                bind(xFinalDescription)
-
-                paddingAll = 20
-            }
-
-            text {
-                bind(stepCountDescription)
-
-                paddingAll = 20
-            }
-
-
-            text {
-                bind(stepSizeDescription)
-
-                paddingAll = 20
-            }
-
             form {
                 fieldset("IVP") {
                     field("X initial") {
-                        textfield("1").onTextChanged {
+                        textfield(solutionParams.xInitial.stringValue()).onTextChanged {
                             controller.xInitialChanged(it.toDoubleOrNull())
                         }
                     }
 
                     field("Y initial") {
-                        textfield("-2").onTextChanged {
+                        textfield(solutionParams.yInitial.stringValue()).onTextChanged {
                             controller.yInitialChanged(it.toDoubleOrNull())
                         }
                     }
@@ -75,14 +42,20 @@ class MainView : View("De Assigment") {
 
                 fieldset("Solution Parameters") {
                     field("X final") {
-                        textfield("7").onTextChanged {
+                        textfield(solutionParams.xFinal.stringValue()).onTextChanged {
                             controller.xFinalChanged(it.toDoubleOrNull())
                         }
                     }
 
-                    field("Steps Count") {
-                        textfield("10").onTextChanged {
-                            controller.stepsNumberChanged(it.toIntOrNull())
+                    field("Min steps Count") {
+                        textfield(solutionParams.minStepsNumber.stringValue()).onTextChanged {
+                            controller.minStepsNumberChanged(it.toIntOrNull())
+                        }
+                    }
+
+                    field("Max steps Count") {
+                        textfield(solutionParams.maxStepsNumber.stringValue()).onTextChanged {
+                            controller.maxStepsNumberChanged(it.toIntOrNull())
                         }
                     }
                 }
@@ -109,7 +82,7 @@ class MainView : View("De Assigment") {
 
         center {
             vbox {
-                linechart("Solutions", configureXAxis(), configureYAxis { solution.value.solutionBorders }) {
+                linechart("Solutions", configureCommonXAxis(), configureYAxis { solution.value.solutionBorders }) {
                     createSymbols = false
 
                     dataProperty().bind(controller.dataModel.solutionData)
@@ -135,37 +108,74 @@ class MainView : View("De Assigment") {
         }
 
         left {
-            linechart("Errors", configureXAxis(), configureYAxis { solution.value.errorBorders }) {
-                createSymbols = false
+            vbox {
+                linechart("Local Errors", configureCommonXAxis(), configureYAxis { solution.value.localErrorBorders }) {
+                    createSymbols = false
 
-                dataProperty().bind(controller.dataModel.errorsData)
-                visibleWhen(Bindings.not(controller.dataModel.loading))
+                    dataProperty().bind(controller.dataModel.localErrorsData)
+                    visibleWhen(Bindings.not(controller.dataModel.loading))
 
-                dataProperty().onChange { newValue ->
-                    newValue?.forEach { series ->
-                        val binder = when (series.name) {
-                            ERROR_EULER -> graphParams.isEVisible
-                            ERROR_IMPROVED_EULER -> graphParams.isIEVisible
-                            ERROR_KUTTA -> graphParams.isRKVisible
-                            else -> null
+                    dataProperty().onChange { newValue ->
+                        newValue?.forEach { series ->
+                            val binder = when (series.name) {
+                                ERROR_LOCAL_EULER -> graphParams.isEVisible
+                                ERROR_LOCAL_IMPROVED_EULER -> graphParams.isIEVisible
+                                ERROR_LOCAL_KUTTA -> graphParams.isRKVisible
+                                else -> null
+                            }
+
+                            series.node.visibleProperty().bind(binder)
                         }
-
-                        series.node.visibleProperty().bind(binder)
                     }
                 }
 
+                linechart("Global Errors", configureGlobalErrorAxis(), configureYAxis { solution.value.globalErrorBorders }) {
+                    createSymbols = false
 
+                    dataProperty().bind(controller.dataModel.globalErrorsData)
+                    visibleWhen(Bindings.not(controller.dataModel.loading))
+
+                    dataProperty().onChange { newValue ->
+                        newValue?.forEach { series ->
+                            val binder = when (series.name) {
+                                ERROR_GLOBAL_EULER -> graphParams.isEVisible
+                                ERROR_GLOBAL_IMPROVED_EULER -> graphParams.isIEVisible
+                                ERROR_GLOBAL_KUTTA -> graphParams.isRKVisible
+                                else -> null
+                            }
+
+                            series.node.visibleProperty().bind(binder)
+                        }
+                    }
+                }
             }
         }
     }
 
-    private fun configureXAxis(): Axis<Number> {
-        val solutionParams = solutionParams()
+    private fun configureGlobalErrorAxis(): Axis<Number> {
+        val tickProperty = (solutionParams.maxStepsNumber - solutionParams.minStepsNumber) / GRID_STEPS_COUNT
 
+        val result =
+            NumberAxis(
+                "Steps count",
+                solutionParams.minStepsNumber.doubleValue(),
+                solutionParams.maxStepsNumber.doubleValue(),
+                tickProperty.doubleValue()
+            )
+
+        result.tickUnitProperty().bind(tickProperty)
+        result.lowerBoundProperty().bind(solutionParams.minStepsNumber)
+        result.upperBoundProperty().bind(solutionParams.maxStepsNumber)
+
+        return result
+    }
+
+    private fun configureCommonXAxis(): Axis<Number> {
         val tickProperty = (solutionParams.xFinal - solutionParams.xInitial) / GRID_STEPS_COUNT
 
         val result =
             NumberAxis(
+                "X",
                 solutionParams.xInitial.value,
                 solutionParams.xFinal.value,
                 tickProperty.value
@@ -178,18 +188,20 @@ class MainView : View("De Assigment") {
         return result
     }
 
+
     private fun configureYAxis(borderGetter: () -> Borders): Axis<Number> {
         val model = controller.dataModel
         val initialOBorders = borderGetter.invoke()
 
         val result = NumberAxis(
+            "Y",
             initialOBorders.min,
             initialOBorders.max,
             (initialOBorders.min - initialOBorders.max) / GRID_STEPS_COUNT
         )
 
-        val minYBinding = Bindings.createDoubleBinding(Callable { borderGetter.invoke().min }, model.solution)
-        val maxYBinding = Bindings.createDoubleBinding(Callable { borderGetter.invoke().max }, model.solution)
+        val minYBinding = Bindings.createDoubleBinding(Callable { max(-UPPER_BORDER, borderGetter.invoke().min) }, model.solution)
+        val maxYBinding = Bindings.createDoubleBinding(Callable { min(UPPER_BORDER, borderGetter.invoke().max) }, model.solution)
 
         val stepBinding = (maxYBinding - minYBinding) / GRID_STEPS_COUNT
 
@@ -199,8 +211,6 @@ class MainView : View("De Assigment") {
 
         return result
     }
-
-    private fun solutionParams() = controller.dataModel.solutionParams
 }
 
 fun TextField.onTextChanged(event: (String) -> Unit) {
@@ -208,3 +218,5 @@ fun TextField.onTextChanged(event: (String) -> Unit) {
         event.invoke(it ?: " ")
     }
 }
+
+fun <T> Property<T>.stringValue() = value.toString()

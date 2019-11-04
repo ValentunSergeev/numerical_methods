@@ -1,8 +1,9 @@
 package controller
 
 import calculation.Evaluator
+import calculation.solutons.SolveConfig
+import calculation.solutons.from
 import kotlinx.coroutines.Job
-import view.MainView
 import launch
 import tornadofx.Controller
 
@@ -41,21 +42,25 @@ class MainController : Controller() {
         }
     }
 
-    fun stepsNumberChanged(newValue: Int?) {
+    fun maxStepsNumberChanged(newValue: Int?) {
         newValue?.let {
-            dataModel.solutionParams.stepsNumber.set(newValue)
+            dataModel.solutionParams.maxStepsNumber.set(newValue)
 
             recalculate()
         }
     }
 
     private fun recalculate() {
+        val config = SolveConfig.from(dataModel.solutionParams)
+
+        if (!isValid(config)) return
+
         cancelPreviousCalculations()
 
         launch ({
             dataModel.loading.set(true)
 
-            val result = evaluator.calculate(dataModel.solutionParams)
+            val result = evaluator.calculate(config)
 
             dataModel.loading.set(false)
             dataModel.solution.set(result)
@@ -64,11 +69,23 @@ class MainController : Controller() {
         }, calculationJob)
     }
 
+    private fun isValid(config: SolveConfig) = with(config) {
+        xInitial < xFinal && minStepsCount < maxStepsCount && minStepsCount > 0
+    }
+
     private fun cancelPreviousCalculations() {
         if (!calculationJob.isCompleted)
             calculationJob.cancel()
 
         calculationJob = Job()
+    }
+
+    fun minStepsNumberChanged(newValue: Int?) {
+        newValue?.let {
+            dataModel.solutionParams.minStepsNumber.set(newValue)
+
+            recalculate()
+        }
     }
 
 

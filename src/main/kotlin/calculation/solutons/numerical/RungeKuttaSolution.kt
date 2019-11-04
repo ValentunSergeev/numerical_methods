@@ -2,6 +2,7 @@ package calculation.solutons.numerical
 
 
 import calculation.solutons.base.SOLUTION_KUTTA
+
 class RungeKuttaSolution : NumericalSolution() {
     override val name = SOLUTION_KUTTA
 

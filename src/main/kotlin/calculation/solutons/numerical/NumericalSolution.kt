@@ -1,16 +1,16 @@
 package calculation.solutons.numerical
 
+import calculation.solutons.SolveConfig
 import calculation.solutons.base.BaseSolution
-import model.MainModel
 import kotlin.math.pow
 
 abstract class NumericalSolution : BaseSolution() {
     protected var step: Double = 0.0
     protected var yNext: Double = 0.0
 
-    override fun init(params: MainModel.SolutionParams) {
-        step = params.stepSize.value
-        yNext = params.yInitial.value
+    override fun init(config: SolveConfig) {
+        step = config.xStepSize
+        yNext = config.yInitial
     }
 
     protected fun computeImplicit(x: Double, y: Double): Double {
