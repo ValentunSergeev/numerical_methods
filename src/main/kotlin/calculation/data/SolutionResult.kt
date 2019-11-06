@@ -7,15 +7,15 @@ class SolutionResult(
     val localErrors: List<XYChart.Series<Number, Number>> = listOf(),
     val globalErrors: List<XYChart.Series<Number, Number>> = listOf()
 ) {
-    lateinit var solutionBorders : Borders
-    lateinit var localErrorBorders : Borders
-    lateinit var globalErrorBorders : Borders
+    lateinit var solutionBorders: Borders
+    lateinit var localErrorBorders: Borders
+    lateinit var globalErrorBorders: Borders
 
     init {
-        findBorders()
+        calculateBorders()
     }
 
-    private fun findBorders() {
+    internal fun calculateBorders() {
         val errorPoints = findAllPoints(localErrors)
 
         val minYLocalError = errorPoints.min() ?: 0.0
@@ -39,7 +39,9 @@ class SolutionResult(
     }
 
     private fun findAllPoints(data: List<XYChart.Series<Number, Number>>): List<Double> {
-        return data.map { series ->
+        return data.filter {
+            it.node?.isVisible ?: true
+        }.map { series ->
             series.data.map { entry ->
                 entry.yValue as Double
             }

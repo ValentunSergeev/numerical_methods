@@ -3,6 +3,7 @@ package view
 import calculation.data.Borders
 import calculation.solutons.base.*
 import controller.MainController
+import javafx.beans.binding.Binding
 import javafx.beans.binding.Bindings
 import javafx.beans.property.Property
 import javafx.scene.chart.Axis
@@ -19,6 +20,7 @@ private const val UPPER_BORDER : Double = 100_000.toDouble()
 
 class MainView : View("De Assigment") {
     private val controller by inject<MainController>()
+
     private val graphParams = controller.dataModel.graphParams
     private val solutionParams = controller.dataModel.solutionParams
     private val solution = controller.dataModel.solution
@@ -62,7 +64,7 @@ class MainView : View("De Assigment") {
 
                 fieldset("Visibility") {
                     field("Analytical") {
-                        checkbox(property = graphParams.isAnalyticalVisible)
+                        val c = checkbox(property = graphParams.isAnalyticalVisible)
                     }
 
                     field("Euler method") {
@@ -82,7 +84,7 @@ class MainView : View("De Assigment") {
 
         center {
             vbox {
-                linechart("Solutions", configureCommonXAxis(), configureYAxis { solution.value.solutionBorders }) {
+                linechart("Solutions", configureCommonXAxis(), configureYAxis(controller.dataModel.solutionYBordersProp)) {
                     createSymbols = false
 
                     dataProperty().bind(controller.dataModel.solutionData)
@@ -109,7 +111,7 @@ class MainView : View("De Assigment") {
 
         left {
             vbox {
-                linechart("Local Errors", configureCommonXAxis(), configureYAxis { solution.value.localErrorBorders }) {
+                linechart("Local Errors", configureCommonXAxis(), configureYAxis(controller.dataModel.localErrorYBordersProp)) {
                     createSymbols = false
 
                     dataProperty().bind(controller.dataModel.localErrorsData)
@@ -129,7 +131,7 @@ class MainView : View("De Assigment") {
                     }
                 }
 
-                linechart("Global Errors", configureGlobalErrorAxis(), configureYAxis { solution.value.globalErrorBorders }) {
+                linechart("Global Errors", configureGlobalErrorAxis(), configureYAxis (controller.dataModel.globalErrorYBordersProp)) {
                     createSymbols = false
 
                     dataProperty().bind(controller.dataModel.globalErrorsData)
@@ -189,9 +191,8 @@ class MainView : View("De Assigment") {
     }
 
 
-    private fun configureYAxis(borderGetter: () -> Borders): Axis<Number> {
-        val model = controller.dataModel
-        val initialOBorders = borderGetter.invoke()
+    private fun configureYAxis(bordersBinding: Binding<Borders>): Axis<Number> {
+        val initialOBorders = bordersBinding.value
 
         val result = NumberAxis(
             "Y",
@@ -200,8 +201,8 @@ class MainView : View("De Assigment") {
             (initialOBorders.min - initialOBorders.max) / GRID_STEPS_COUNT
         )
 
-        val minYBinding = Bindings.createDoubleBinding(Callable { max(-UPPER_BORDER, borderGetter.invoke().min) }, model.solution)
-        val maxYBinding = Bindings.createDoubleBinding(Callable { min(UPPER_BORDER, borderGetter.invoke().max) }, model.solution)
+        val minYBinding = Bindings.createDoubleBinding(Callable { max(-UPPER_BORDER, bordersBinding.value.min) }, bordersBinding)
+        val maxYBinding = Bindings.createDoubleBinding(Callable { min(UPPER_BORDER, bordersBinding.value.max) }, bordersBinding)
 
         val stepBinding = (maxYBinding - minYBinding) / GRID_STEPS_COUNT
 

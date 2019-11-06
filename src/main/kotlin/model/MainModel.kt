@@ -18,6 +18,30 @@ class MainModel {
 
     val solution = SimpleObjectProperty(SolutionResult())
 
+    val solutionYBordersProp = Bindings.createObjectBinding(
+        Callable {
+            solution.value.calculateBorders()
+
+            solution.value.solutionBorders
+        }, graphParams.isAnalyticalVisible, graphParams.isEVisible, graphParams.isIEVisible, graphParams.isRKVisible, solution
+    )
+
+    val localErrorYBordersProp = Bindings.createObjectBinding(
+        Callable {
+            solution.value.calculateBorders()
+
+            solution.value.localErrorBorders
+        }, graphParams.isAnalyticalVisible, graphParams.isEVisible, graphParams.isIEVisible, graphParams.isRKVisible, solution
+    )
+
+    val globalErrorYBordersProp = Bindings.createObjectBinding(
+        Callable {
+            solution.value.calculateBorders()
+
+            solution.value.globalErrorBorders
+        }, graphParams.isAnalyticalVisible, graphParams.isEVisible, graphParams.isIEVisible, graphParams.isRKVisible, solution
+    )
+
     val solutionData = Bindings.createObjectBinding(
         Callable {
             val result = FXCollections.observableArrayList<XYChart.Series<Number, Number>>()
